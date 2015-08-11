@@ -26,6 +26,16 @@ class SecureXMLResponse extends AbstractResponse
         return true;
     }
 
+    public function isCancelled()
+    {
+        // As per appendix F, 017 means the message was processed correctly
+        if ((string) $this->data->Status->statusCode !== '017') {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * Determine if we have had payment information returned.
      *
