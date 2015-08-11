@@ -14,6 +14,11 @@ class DirectPostCompletePurchaseResponse extends AbstractResponse
         return isset($this->data['summarycode']) && $this->data['summarycode'] == 1;
     }
 
+    public function isCancelled()
+    {
+        return isset($this->data['summarycode']) && $this->data['summarycode'] == 3;
+    }
+
     public function getMessage()
     {
         if (isset($this->data['restext'])) {

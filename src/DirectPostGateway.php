@@ -66,4 +66,14 @@ class DirectPostGateway extends AbstractGateway
     {
         return $this->createRequest('\Omnipay\SecurePay\Message\DirectPostCompletePurchaseRequest', $parameters);
     }
+
+    public function createCard(array $parameters = array())
+    {
+        return $this->createRequest('\Omnipay\SecurePay\Message\DirectPostCreateCardRequest', $parameters);
+    }
+
+    public function completeCreateCard(array $parameters = array())
+    {
+        return $this->createRequest('\Omnipay\SecurePay\Message\DirectPostCompleteCreateCardRequest', $parameters);
+    }
 }
