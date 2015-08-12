@@ -7,12 +7,16 @@ namespace Omnipay\SecurePay\Message;
  */
 abstract class SecureXMLAbstractRequest extends AbstractRequest
 {
-    public $testEndpoint = 'https://test.securepay.com.au/xmlapi/payment';
-    public $liveEndpoint = 'https://api.securepay.com.au/xmlapi/payment';
+    public $testPurchaseEndpoint = 'https://test.securepay.com.au/xmlapi/payment';
+    public $livePurchaseEndpoint = 'https://api.securepay.com.au/xmlapi/payment';
+    public $testPeriodicEndpoint = 'https://test.securepay.com.au/xmlapi/periodic';
+    public $livePeriodicEndpoint = 'https://api.securepay.com.au/xmlapi/periodic';
 
-    protected $requestType = 'Payment';
     protected $requiredFields = array();
 
+    public function getRequestType(){
+        return ($this->getCardReference()?'Periodic':'Payment');
+    }
     /**
      * Set the messageID on the request.
      *
@@ -74,7 +78,7 @@ abstract class SecureXMLAbstractRequest extends AbstractRequest
         $merchantInfo->addChild('merchantID', $this->getMerchantId());
         $merchantInfo->addChild('password', $this->getTransactionPassword());
 
-        $xml->addChild('RequestType', $this->requestType); // Not related to the transaction type
+        $xml->addChild('RequestType', $this->getRequestType()); // Not related to the transaction type
 
         return $xml;
     }
@@ -87,18 +91,28 @@ abstract class SecureXMLAbstractRequest extends AbstractRequest
     protected function getBasePaymentXML()
     {
         $xml = $this->getBaseXML();
+        $cardreference = $this->getCardReference();
+        if($cardreference) {
+            $periodic = $xml->addChild( 'Periodic' );
+            $periodicList = $periodic->addChild( 'PeriodicList' );
+            $periodicItem = $periodicList->addChild( 'PeriodicItem' );
+            $periodicItem->addChild('actionType', 'trigger');
+            $periodicItem->addChild('clientID', $cardreference);
+            $periodicItem->addChild('amount', $this->getAmountInteger());
+            $periodicItem->addChild('currency', $this->getCurrency());
+        }else{
+            $payment = $xml->addChild( 'Payment' );
+            $txnList = $payment->addChild( 'TxnList' );
+            $txnList->addAttribute( 'count', 1 ); // One transaction per request supported by current API.
 
-        $payment = $xml->addChild('Payment');
-        $txnList = $payment->addChild('TxnList');
-        $txnList->addAttribute('count', 1); // One transaction per request supported by current API.
-
-        $transaction = $txnList->addChild('Txn');
-        $transaction->addAttribute('ID', 1); // One transaction per request supported by current API.
-        $transaction->addChild('txnType', $this->txnType);
-        $transaction->addChild('txnSource', 23); // Must always be 23 for SecureXML.
-        $transaction->addChild('amount', $this->getAmountInteger());
-        $transaction->addChild('currency', $this->getCurrency());
-        $transaction->addChild('purchaseOrderNo', $this->getTransactionId());
+            $transaction = $txnList->addChild( 'Txn' );
+            $transaction->addAttribute( 'ID', 1 ); // One transaction per request supported by current API.
+            $transaction->addChild( 'txnType', $this->txnType );
+            $transaction->addChild( 'txnSource', 23 ); // Must always be 23 for SecureXML.
+            $transaction->addChild('amount', $this->getAmountInteger());
+            $transaction->addChild('currency', $this->getCurrency());
+            $transaction->addChild('purchaseOrderNo', $this->getTransactionId());
+        }
 
         return $xml;
     }
@@ -109,14 +123,16 @@ abstract class SecureXMLAbstractRequest extends AbstractRequest
      */
     protected function getBasePaymentXMLWithCard()
     {
-        $this->getCard()->validate();
-
         $xml = $this->getBasePaymentXML();
 
-        $card = $xml->Payment->TxnList->Txn->addChild('CreditCardInfo');
-        $card->addChild('cardNumber', $this->getCard()->getNumber());
-        $card->addChild('cvv', $this->getCard()->getCvv());
-        $card->addChild('expiryDate', $this->getCard()->getExpiryDate('m/y'));
+        if(!$this->getCardReference()) {
+            $this->getCard()->validate();
+
+            $card = $xml->Payment->TxnList->Txn->addChild( 'CreditCardInfo' );
+            $card->addChild( 'cardNumber', $this->getCard()->getNumber() );
+            $card->addChild( 'cvv', $this->getCard()->getCvv() );
+            $card->addChild( 'expiryDate', $this->getCard()->getExpiryDate( 'm/y' ) );
+        }
 
         return $xml;
     }

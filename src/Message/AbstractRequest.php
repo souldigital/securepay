@@ -7,8 +7,10 @@ namespace Omnipay\SecurePay\Message;
  */
 abstract class AbstractRequest extends \Omnipay\Common\Message\AbstractRequest
 {
-    public $testEndpoint;
-    public $liveEndpoint;
+    public $testPurchaseEndpoint;
+    public $livePurchaseEndpoint;
+    public $testPeriodicEndpoint;
+    public $livePeriodicEndpoint;
 
     public function getMerchantId()
     {
@@ -32,6 +34,14 @@ abstract class AbstractRequest extends \Omnipay\Common\Message\AbstractRequest
 
     public function getEndpoint()
     {
-        return $this->getTestMode() ? $this->testEndpoint : $this->liveEndpoint;
+        $type = $this->getRequestType();
+        $mode = ($this->getTestMode())?"Test":"Live";
+
+        $r["Payment"]["Test"] = $this->testPurchaseEndpoint;
+        $r["Payment"]["Live"] = $this->livePurchaseEndpoint;
+        $r["Periodic"]["Test"] = $this->testPeriodicEndpoint;
+        $r["Periodic"]["Live"] = $this->livePeriodicEndpoint;
+
+        return  $r[$type][$mode];
     }
 }

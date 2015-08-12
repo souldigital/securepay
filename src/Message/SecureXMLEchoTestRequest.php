@@ -12,7 +12,9 @@ namespace Omnipay\SecurePay\Message;
  */
 class SecureXMLEchoTestRequest extends SecureXMLAbstractRequest
 {
-    protected $requestType = 'Echo';
+    public function getRequestType(){
+        return 'Echo';
+    }
 
     public function getData()
     {

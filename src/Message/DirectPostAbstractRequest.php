@@ -7,6 +7,10 @@ namespace Omnipay\SecurePay\Message;
  */
 abstract class DirectPostAbstractRequest extends AbstractRequest
 {
-    public $testEndpoint = 'https://api.securepay.com.au/test/directpost/authorise';
-    public $liveEndpoint = 'https://api.securepay.com.au/live/directpost/authorise';
+    public $testPurchaseEndpoint = 'https://api.securepay.com.au/test/directpost/authorise';
+    public $livePurchaseEndpoint = 'https://api.securepay.com.au/live/directpost/authorise';
+
+    public function getRequestType(){
+        return 'Payment';
+    }
 }
