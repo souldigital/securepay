@@ -16,10 +16,12 @@ class SecureXMLResponse extends AbstractResponse
      */
     public function isSuccessful()
     {
+
         // As per appendix F, 000 means the message was processed correctly
-        if ((string) $this->data->Status->statusCode !== '000'
-            || ($this->hasTransaction()
-                && (string) $this->data->Payment->TxnList->Txn->approved !== 'Yes')) {
+        if (!(in_array( (string) $this->data->Status->statusCode, array('000', '0')))
+            || ( ($this->hasTransaction() && (string) $this->data->Payment->TxnList->Txn->approved !== 'Yes')
+            && ($this->hasPeriodic() && (string) $this->data->Periodic->PeriodicList->PeriodicItem->approved !== 'Yes') )
+        ) {
             return false;
         }
 
@@ -29,7 +31,7 @@ class SecureXMLResponse extends AbstractResponse
     public function isCancelled()
     {
         // As per appendix F, 017 means the message was processed correctly
-        if ((string) $this->data->Status->statusCode !== '017') {
+        if ((string) in_array($this->data->Status->statusCode, array('017', '17') )) {
             return true;
         }
 
@@ -47,6 +49,19 @@ class SecureXMLResponse extends AbstractResponse
     protected function hasTransaction()
     {
         return isset($this->data->Payment->TxnList->Txn);
+    }
+
+    /**
+     * Determine if we have had periodic payment information returned.
+     *
+     * @note For certain errors a Payment element is returned but has an empty
+     * TxnList so this will tell us if we actually have a transaction to check.
+     *
+     * @return bool True if we have a transaction.
+     */
+    protected function hasPeriodic()
+    {
+        return isset($this->data->Periodic->PeriodicList->PeriodicItem);
     }
 
     /**

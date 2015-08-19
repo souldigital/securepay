@@ -66,13 +66,17 @@ abstract class SecureXMLAbstractRequest extends AbstractRequest
             $this->validate($field);
         }
 
-        $xml = new \SimpleXMLElement('<SecurePayMessage/>');
+        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><SecurePayMessage/>');
 
         $messageInfo = $xml->addChild('MessageInfo');
         $messageInfo->addChild('messageID', $this->getMessageId());
         $messageInfo->addChild('messageTimestamp', $this->generateTimestamp());
         $messageInfo->addChild('timeoutValue', 60);
-        $messageInfo->addChild('apiVersion', 'xml-4.2');
+        if($this->getCardReference()){
+            $messageInfo->addChild('apiVersion', 'spxml-3.0');  // spxml-3.0 for triggered payments
+        }else{
+            $messageInfo->addChild('apiVersion', 'xml-4.2');    // xml-4.2 for standard payments
+        }
 
         $merchantInfo = $xml->addChild('MerchantInfo');
         $merchantInfo->addChild('merchantID', $this->getMerchantId());
@@ -95,7 +99,9 @@ abstract class SecureXMLAbstractRequest extends AbstractRequest
         if($cardreference) {
             $periodic = $xml->addChild( 'Periodic' );
             $periodicList = $periodic->addChild( 'PeriodicList' );
+            $periodicList->addAttribute("count", "1");
             $periodicItem = $periodicList->addChild( 'PeriodicItem' );
+            $periodicItem->addAttribute("ID", "1");
             $periodicItem->addChild('actionType', 'trigger');
             $periodicItem->addChild('clientID', $cardreference);
             $periodicItem->addChild('amount', $this->getAmountInteger());
